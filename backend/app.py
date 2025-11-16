@@ -1,7 +1,9 @@
 
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from pathlib import Path
 import shutil
 import tempfile
@@ -26,8 +28,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-init_db()
+# Add exception handlers to ensure CORS headers are included in error responses
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers={"Access-Control-Allow-Origin": request.headers.get("origin", "*")}
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()},
+        headers={"Access-Control-Allow-Origin": request.headers.get("origin", "*")}
+    )
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error", "error": str(exc)},
+        headers={"Access-Control-Allow-Origin": request.headers.get("origin", "*")}
+    )
+
+# Initialize embedder first to detect dimension
 embedder = Embedder()
+
+# Initialize database with the correct embedding dimension
+init_db(embedding_dimension=embedder.dimension)
+
 retriever = Retriever(k=8)
 llm = ChatLLM()
 

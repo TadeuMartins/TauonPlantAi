@@ -15,6 +15,8 @@ from rag.chat import ChatLLM
 
 app = FastAPI(title="TauON PlantAI")
 
+# Configure CORS to allow frontend requests
+# CORS_ORIGINS can be set in .env file (e.g., "http://localhost:5173,http://localhost:3000")
 origins = [o.strip() for o in settings.cors_origins.split(",")]
 app.add_middleware(
     CORSMiddleware,

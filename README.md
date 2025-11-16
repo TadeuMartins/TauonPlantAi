@@ -20,4 +20,5 @@ RAG para documentos industriais com ingestão de **pasta local** (via seleção 
 ## Notas
 - Embeddings: Azure OpenAI ou OpenAI; fallback CPU (sentence-transformers).
 - Suporte de arquivos: PDF, DOCX, TXT, CSV/XLSX (básico) e OCR em imagens.
+- **CORS**: O backend já está configurado com CORS. Se tiver problemas de CORS, verifique a variável `CORS_ORIGINS` no arquivo `.env` (padrão: `http://localhost:5173`). Para múltiplas origens, separe por vírgula.
 - Melhorias recomendadas: chunking por tokens, reranker, namespaces por projeto e crawling incremental do SharePoint.

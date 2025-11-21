@@ -9,23 +9,68 @@ export default function SharePointForm(){
 
   async function run(){
     setBusy(true)
-    setStatus('Connecting to SharePoint and ingesting…')
+    setStatus('Conectando ao SharePoint e processando...')
     try {
       await ingestSharePoint(path)
-      setStatus('✅ Ingestion complete from SharePoint')
+      setStatus('✅ Ingestão concluída do SharePoint')
     } catch (e:any){
-      setStatus('❌ ' + (e?.message || 'Failed'))
-    } finally { setBusy(false) }
+      setStatus('❌ Erro: ' + (e?.message || 'Falha na conexão'))
+    } finally { 
+      setBusy(false) 
+    }
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !busy) {
+      e.preventDefault()
+      run()
+    }
+  }
+
+  const getStatusClass = () => {
+    if (busy) return 'status-message working'
+    if (status.includes('✅')) return 'status-message success'
+    if (status.includes('❌')) return 'status-message error'
+    return ''
   }
 
   return (
     <div className="card">
-      <div className="row">
-        <span className="pill">SharePoint</span>
-        <input value={path} onChange={e=>setPath(e.target.value)} placeholder="Documents/Folder/Subfolder" />
-        <button className="btn" onClick={run} disabled={busy}>Ingest</button>
+      <div style={{marginBottom: '1rem'}}>
+        <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem'}}>
+          <span className="pill">☁️ SharePoint</span>
+        </div>
+        <p style={{fontSize: '0.875rem', color: 'var(--text-muted)'}}>
+          Ingira documentos do Microsoft SharePoint
+        </p>
       </div>
-      <div style={{marginTop:8, opacity:.9}}>{busy ? 'Working…' : status}</div>
+      
+      <div className="row" style={{marginBottom: status ? '0.5rem' : '0'}}>
+        <input 
+          value={path} 
+          onChange={e=>setPath(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="Documents/Folder/Subfolder"
+          disabled={busy}
+          style={{flex: 1}}
+        />
+        <button className="btn" onClick={run} disabled={busy}>
+          {busy ? (
+            <>
+              <span className="spinner"></span>
+              Processando...
+            </>
+          ) : (
+            '📤 Ingerir'
+          )}
+        </button>
+      </div>
+      
+      {status && (
+        <div className={getStatusClass()}>
+          {status}
+        </div>
+      )}
     </div>
   )
 }

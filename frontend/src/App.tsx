@@ -6,14 +6,20 @@ import Chat from './components/Chat'
 
 export default function App(){
   return (
-    <div style={{maxWidth:980, margin:'40px auto', padding:'0 16px'}}>
-      <h1 style={{fontSize:28, marginBottom:8}}>TauON PlantAI</h1>
-      <div style={{opacity:.8, marginBottom:16}}>RAG para documentos industriais com ingestão local e SharePoint.</div>
-      <div className="row" style={{gap:16}}>
-        <div style={{flex:1}}><FolderPicker/></div>
-        <div style={{flex:1}}><SharePointForm/></div>
+    <div style={{maxWidth: '1100px', margin: '0 auto', padding: '2.5rem 1rem'}}>
+      <header style={{marginBottom: '2rem'}}>
+        <h1>TauON PlantAI</h1>
+        <p style={{fontSize: '1rem', color: 'var(--text-secondary)', marginTop: '0.5rem'}}>
+          RAG para documentos industriais com ingestão local e SharePoint
+        </p>
+      </header>
+      
+      <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem', marginBottom: '1rem'}}>
+        <FolderPicker/>
+        <SharePointForm/>
       </div>
-      <div style={{marginTop:16}}><Chat/></div>
+      
+      <Chat/>
     </div>
   )
 }

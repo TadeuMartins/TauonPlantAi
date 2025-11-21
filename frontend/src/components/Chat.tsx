@@ -12,6 +12,8 @@ type Message = {
   sources?: Source[]
 }
 
+const MAX_MESSAGES = 10
+
 export default function Chat(){
   const [input, setInput] = React.useState('')
   const [messages, setMessages] = React.useState<Message[]>(() => {
@@ -30,7 +32,7 @@ export default function Chat(){
   }, [messages])
 
   React.useEffect(() => {
-    localStorage.setItem('chat_history', JSON.stringify(messages.slice(-10)))
+    localStorage.setItem('chat_history', JSON.stringify(messages.slice(-MAX_MESSAGES)))
   }, [messages])
 
   async function ask(){
@@ -56,7 +58,7 @@ export default function Chat(){
         timestamp: Date.now(),
         sources: res.sources
       }
-      setMessages(prev => [...prev.slice(-9), assistantMessage])
+      setMessages(prev => [...prev.slice(-(MAX_MESSAGES - 1)), assistantMessage])
     } catch (error: any) {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -64,7 +66,7 @@ export default function Chat(){
         content: 'Erro ao processar a pergunta. Verifique se a API está configurada corretamente.',
         timestamp: Date.now()
       }
-      setMessages(prev => [...prev.slice(-9), errorMessage])
+      setMessages(prev => [...prev.slice(-(MAX_MESSAGES - 1)), errorMessage])
     } finally {
       setBusy(false)
     }
@@ -115,7 +117,7 @@ export default function Chat(){
         )}
       </div>
       
-      <div style={{
+      <div className="chat-messages-container" style={{
         flex: 1,
         overflowY: 'auto',
         padding: '1rem 0',

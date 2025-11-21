@@ -428,20 +428,20 @@ html {
 }
 
 /* Custom scrollbar for chat messages */
-.card > div:nth-child(2)::-webkit-scrollbar {
+.chat-messages-container::-webkit-scrollbar {
   width: 6px;
 }
 
-.card > div:nth-child(2)::-webkit-scrollbar-track {
+.chat-messages-container::-webkit-scrollbar-track {
   background: var(--bg-input);
   border-radius: 3px;
 }
 
-.card > div:nth-child(2)::-webkit-scrollbar-thumb {
+.chat-messages-container::-webkit-scrollbar-thumb {
   background: var(--border-primary);
   border-radius: 3px;
 }
 
-.card > div:nth-child(2)::-webkit-scrollbar-thumb:hover {
+.chat-messages-container::-webkit-scrollbar-thumb:hover {
   background: var(--accent-primary);
 }

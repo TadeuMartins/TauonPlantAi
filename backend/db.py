@@ -60,9 +60,25 @@ def init_db(embedding_dimension: int = 3072):
                   content TEXT,
                   embedding VECTOR({embedding_dimension})
                 );
-                CREATE INDEX IF NOT EXISTS idx_documents_embedding ON documents USING ivfflat (embedding vector_cosine_ops);
-                CREATE INDEX IF NOT EXISTS idx_documents_source ON documents(source);
                 """
             ))
+            
+            # Create IVFFLAT index only if dimension <= 2000 (pgvector limitation)
+            # For dimensions > 2000, the table will work but without the IVFFLAT index
+            # which may result in slower similarity searches but allows use of large models
+            if embedding_dimension <= 2000:
+                conn.execute(text(
+                    "CREATE INDEX IF NOT EXISTS idx_documents_embedding ON documents USING ivfflat (embedding vector_cosine_ops);"
+                ))
+                print(f"[DB] Created IVFFLAT index for embedding dimension {embedding_dimension}")
+            else:
+                print(f"[DB] Skipping IVFFLAT index creation: dimension {embedding_dimension} exceeds pgvector limit of 2000")
+                print(f"[DB] Similarity searches will work but may be slower without the index")
+            
+            # Always create source index regardless of embedding dimension
+            conn.execute(text(
+                "CREATE INDEX IF NOT EXISTS idx_documents_source ON documents(source);"
+            ))
+            
             print(f"[DB] Table created successfully with dimension {embedding_dimension}")
 

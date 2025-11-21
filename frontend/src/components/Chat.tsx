@@ -13,26 +13,93 @@ export default function Chat(){
   async function ask(){
     setBusy(true)
     setA('')
-    const res = await chat(q)
-    setA(res.answer)
-    setHits(res.sources)
-    setBusy(false)
+    try {
+      const res = await chat(q)
+      setA(res.answer)
+      setHits(res.sources)
+    } catch (error: any) {
+      setA('Erro ao processar a pergunta. Verifique se a API está configurada corretamente.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      ask()
+    }
   }
 
   return (
     <div className="card">
-      <div className="row">
-        <input style={{flex:1}} value={q} onChange={e=>setQ(e.target.value)} placeholder="Faça sua pergunta…" />
-        <button className="btn" onClick={ask} disabled={busy}>Perguntar</button>
+      <div style={{marginBottom: '1rem'}}>
+        <h2 style={{fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)'}}>
+          💬 Chat com Documentos
+        </h2>
+        <p style={{fontSize: '0.875rem', color: 'var(--text-muted)'}}>
+          Faça perguntas sobre seus documentos industriais
+        </p>
       </div>
-      <div style={{marginTop:12, whiteSpace:'pre-wrap'}}>{busy ? 'Pensando…' : a}</div>
+      
+      <div className="row" style={{marginBottom: '1rem'}}>
+        <input 
+          style={{flex: 1}} 
+          value={q} 
+          onChange={e=>setQ(e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="Faça sua pergunta…" 
+        />
+        <button className="btn" onClick={ask} disabled={busy}>
+          {busy ? (
+            <>
+              <span className="spinner"></span>
+              Pensando...
+            </>
+          ) : (
+            '🔍 Perguntar'
+          )}
+        </button>
+      </div>
+      
+      {a && (
+        <div style={{
+          marginTop: '1rem',
+          padding: '1rem',
+          background: 'var(--bg-tertiary)',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--border-secondary)'
+        }}>
+          <div style={{fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600}}>
+            📝 RESPOSTA
+          </div>
+          <div style={{whiteSpace: 'pre-wrap', lineHeight: '1.7', color: 'var(--text-primary)'}}>
+            {a}
+          </div>
+        </div>
+      )}
+      
       {!!hits.length && (
-        <div style={{marginTop:16}}>
-          <div style={{opacity:.7, marginBottom:8}}>Fontes</div>
+        <div style={{marginTop: '1.5rem'}}>
+          <div style={{
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            color: 'var(--text-secondary)',
+            marginBottom: '0.75rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            📚 FONTES ({hits.length})
+          </div>
           {hits.map((h,i)=> (
-            <div key={i} style={{marginBottom:8, padding:8, border:'1px solid #2a3352', borderRadius:12}}>
-              <div style={{fontSize:12, opacity:.8}}>{h.uri} — p.{h.page} — score {h.score?.toFixed(3)}</div>
-              <div style={{fontSize:13, opacity:.9}}>{(h.content||'').slice(0,240)}…</div>
+            <div key={i} className="source-item">
+              <div className="source-meta">
+                <span>📄 {h.uri}</span>
+                <span>📄 Página {h.page}</span>
+                <span className="score-badge">Score: {h.score?.toFixed(3)}</span>
+              </div>
+              <div className="source-content">{(h.content||'').slice(0, 280)}…</div>
             </div>
           ))}
         </div>

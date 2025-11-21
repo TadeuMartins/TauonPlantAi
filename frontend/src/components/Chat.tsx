@@ -11,6 +11,7 @@ export default function Chat(){
   const [busy, setBusy] = React.useState(false)
 
   async function ask(){
+    if (!q.trim() || busy) return
     setBusy(true)
     setA('')
     try {
@@ -25,7 +26,7 @@ export default function Chat(){
   }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !busy) {
       e.preventDefault()
       ask()
     }

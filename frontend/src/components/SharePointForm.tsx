@@ -22,6 +22,7 @@ export default function SharePointForm(){
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !busy) {
+      e.preventDefault()
       run()
     }
   }

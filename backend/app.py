@@ -7,6 +7,13 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from pathlib import Path
 import shutil
 import tempfile
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file in the project root
+# This ensures correct loading of variables like TAUON_API_KEY and CORS_ORIGINS
+# when running locally without Docker
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'), override=True)
 
 from settings import settings
 from db import init_db

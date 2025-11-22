@@ -21,6 +21,7 @@ RAG para documentos industriais com ingestão de **pasta local** (via seleção 
 > Observação: para `webkitdirectory` (seleção de pasta) use Chrome/Edge.
 
 ## Notas
+- **Variáveis de ambiente**: O backend utiliza `python-dotenv` para carregar automaticamente as variáveis do arquivo `.env` na raiz do projeto ao rodar localmente (sem Docker). Isso garante que variáveis como `TAUON_API_KEY` e `CORS_ORIGINS` sejam sempre carregadas corretamente. A dependência já está incluída em `backend/requirements.txt`.
 - **Embeddings**: O sistema detecta automaticamente a dimensionalidade do modelo:
   - Azure OpenAI ou OpenAI API: `text-embedding-3-large` (3072 dim), `text-embedding-3-small` (1536 dim), `text-embedding-ada-002` (1536 dim)
   - Fallback CPU: sentence-transformers (dimensão detectada automaticamente)

@@ -93,7 +93,7 @@ def check_auth(x_api_key: str):
     """
     # Mask API keys for logging security (show only first 4 and last 4 characters)
     def mask_key(key: str) -> str:
-        if not key:
+        if not key or len(key) == 0:
             return "None"
         if len(key) <= 8:
             return "***masked***"
@@ -132,8 +132,6 @@ async def ingest_folder_upload(x_api_key: str = Form(...), files: list[UploadFil
     try:
         # Check authentication with detailed logging
         check_auth(x_api_key)
-        
-        logger.info(f"Processing {len(files)} uploaded files")
         
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)

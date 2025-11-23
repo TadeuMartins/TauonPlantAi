@@ -93,17 +93,19 @@ def check_auth(x_api_key: str):
     """
     # Mask API keys for logging security (show only first 4 and last 4 characters)
     def mask_key(key: str) -> str:
+        if not key:
+            return "None"
         if len(key) <= 8:
-            return "***"
+            return "***masked***"
         return f"{key[:4]}...{key[-4:]}"
     
-    received_key_masked = mask_key(x_api_key) if x_api_key else "None"
-    expected_key_masked = mask_key(settings.api_key)
+    received_key_masked = mask_key(x_api_key)
     
-    logger.info(f"Authentication attempt - Received key: {received_key_masked}, Expected key: {expected_key_masked}")
+    # Log authentication attempt without exposing the expected key
+    logger.info(f"Authentication attempt - Received key: {received_key_masked}")
     
     if x_api_key != settings.api_key:
-        logger.error(f"Authentication failed - Invalid API key. Received: {received_key_masked}, Expected: {expected_key_masked}")
+        logger.error(f"Authentication failed - Invalid API key provided: {received_key_masked}")
         raise HTTPException(status_code=401, detail="Invalid API key")
     
     logger.info("Authentication successful")
@@ -157,17 +159,18 @@ async def ingest_folder_upload(x_api_key: str = Form(...), files: list[UploadFil
         raise
     
     except Exception as e:
-        # Log the full traceback for debugging
+        # Log the full traceback for debugging (server-side)
         logger.error("Exception occurred in /ingest/folder-upload endpoint:")
         logger.error(traceback.format_exc())
         
-        # Return detailed error response with CORS headers
+        # Return detailed error response for debugging
+        # Note: In production, you may want to limit error details for security
         error_detail = {
             "error": "Internal server error",
             "message": str(e),
             "type": type(e).__name__
         }
-        logger.error(f"Returning error response: {error_detail}")
+        logger.error(f"Returning error response to client: {error_detail}")
         
         raise HTTPException(
             status_code=500,

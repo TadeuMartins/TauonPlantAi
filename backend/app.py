@@ -8,12 +8,21 @@ from pathlib import Path
 import shutil
 import tempfile
 import os
+import logging
+import traceback
 from dotenv import load_dotenv
 
 # Load environment variables from .env file in the project root
 # This ensures correct loading of variables like TAUON_API_KEY and CORS_ORIGINS
 # when running locally without Docker
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'), override=True)
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 from settings import settings
 from db import init_db
@@ -70,8 +79,37 @@ retriever = Retriever(k=8)
 llm = ChatLLM()
 
 def check_auth(x_api_key: str):
+    """
+    Check API key authentication.
+    
+    This function validates the provided API key against the configured key in settings.
+    It logs authentication attempts for diagnostics.
+    
+    Args:
+        x_api_key: The API key provided by the client
+        
+    Raises:
+        HTTPException: 401 Unauthorized if the API key is invalid
+    """
+    # Mask API keys for logging security (show only first 4 and last 4 characters)
+    def mask_key(key: str) -> str:
+        if not key or len(key) == 0:
+            return "None"
+        if len(key) <= 8:
+            return "***masked***"
+        return f"{key[:4]}...{key[-4:]}"
+    
+    received_key_masked = mask_key(x_api_key)
+    
+    # Log authentication attempt without exposing the expected key
+    logger.info(f"Authentication attempt - Received key: {received_key_masked}")
+    
     if x_api_key != settings.api_key:
+        logger.error(f"Authentication failed - Invalid API key provided: {received_key_masked}")
         raise HTTPException(status_code=401, detail="Invalid API key")
+    
+    logger.info("Authentication successful")
+
 
 @app.post("/ingest/local")
 async def ingest_local(x_api_key: str = Form(...), path: str = Form(...)):
@@ -81,16 +119,62 @@ async def ingest_local(x_api_key: str = Form(...), path: str = Form(...)):
 
 @app.post("/ingest/folder-upload")
 async def ingest_folder_upload(x_api_key: str = Form(...), files: list[UploadFile] = File(...)):
-    check_auth(x_api_key)
-    with tempfile.TemporaryDirectory() as tmp:
-        base = Path(tmp)
-        for f in files:
-            p = base / f.filename
-            p.parent.mkdir(parents=True, exist_ok=True)
-            with p.open("wb") as out:
-                shutil.copyfileobj(f.file, out)
-        ingest_path(tmp, source_label="upload")
-    return {"status": "ok"}
+    """
+    Ingest files from a folder upload.
+    
+    This endpoint receives multiple files, saves them to a temporary directory,
+    and processes them through the ingestion pipeline.
+    
+    Authentication is required via x_api_key form parameter.
+    """
+    logger.info(f"Starting /ingest/folder-upload - Received {len(files)} files")
+    
+    try:
+        # Check authentication with detailed logging
+        check_auth(x_api_key)
+        
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            logger.info(f"Created temporary directory: {tmp}")
+            
+            for i, f in enumerate(files, 1):
+                logger.info(f"Processing file {i}/{len(files)}: {f.filename}")
+                p = base / f.filename
+                p.parent.mkdir(parents=True, exist_ok=True)
+                with p.open("wb") as out:
+                    shutil.copyfileobj(f.file, out)
+                logger.info(f"Saved file: {p}")
+            
+            logger.info(f"Starting ingestion pipeline for {tmp}")
+            ingest_path(tmp, source_label="upload")
+            logger.info("Ingestion pipeline completed successfully")
+        
+        return {"status": "ok"}
+    
+    except HTTPException as http_exc:
+        # Re-raise HTTP exceptions (like 401 from check_auth) without modification
+        logger.error(f"HTTP exception in /ingest/folder-upload: {http_exc.status_code} - {http_exc.detail}")
+        raise
+    
+    except Exception as e:
+        # Log the full traceback for debugging (server-side)
+        logger.error("Exception occurred in /ingest/folder-upload endpoint:")
+        logger.error(traceback.format_exc())
+        
+        # Return detailed error response for debugging
+        # Note: In production, you may want to limit error details for security
+        error_detail = {
+            "error": "Internal server error",
+            "message": str(e),
+            "type": type(e).__name__
+        }
+        logger.error(f"Returning error response to client: {error_detail}")
+        
+        raise HTTPException(
+            status_code=500,
+            detail=error_detail
+        )
+
 
 @app.post("/ingest/sharepoint")
 async def ingest_sharepoint(x_api_key: str = Form(...), sp_folder: str = Form(...)):
